@@ -23,11 +23,14 @@ jobs:
 
       - name: Compile with Quartus 17.0.2
         run: |
-          docker run --rm -v "$PWD":/build -w /build ryanfb/quartus-mister:latest bash -lc '
-            Q="/opt/intelFPGA_lite/17.0/quartus/bin/quartus_sh"
-            [ -x "$Q" ] || Q="$(find /opt -path "*/uninstall/*" -prune -o -type f -name quartus_sh -path "*/bin/*" -print 2>/dev/null | head -1)"
-            echo "using: $Q"
-            export PATH="$(dirname "$Q"):$PATH"
+          docker run --rm -u 0 -v "$PWD":/build -w /build ryanfb/quartus-mister:latest bash -lc '
+            QB="/opt/intelFPGA_lite/17.0/quartus/bin"
+            # Quartus 17 bundles an old libstdc++ that clashes with the image tcmalloc
+            # (missing CXXABI_1.3.8 / GLIBCXX_3.4.21); drop it so the loader uses the
+            # newer system libstdc++, the documented fix for Quartus on modern glibc.
+            rm -f /opt/intelFPGA_lite/17.0/quartus/linux64/libstdc++.so.6* 2>/dev/null || true
+            export PATH="$QB:$PATH"
+            which quartus_sh
             quartus_sh --version 2>&1 | head -2
             quartus_sh --flow compile Arcade-LaserdiscGames
           '
