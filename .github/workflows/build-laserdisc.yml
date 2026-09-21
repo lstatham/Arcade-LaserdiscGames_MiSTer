@@ -11,6 +11,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Patch core_jpeg IDCT RAM for Quartus
+        run: |
+          cp .github/patches/jpeg_idct_ram_dp.v rtl/video/core_jpeg/src_v/jpeg_idct_ram_dp.v
+          echo "applied; MERGED marker count:"; grep -c MERGED rtl/video/core_jpeg/src_v/jpeg_idct_ram_dp.v
+
       - name: Free disk and move docker storage to /mnt
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
@@ -25,12 +30,8 @@ jobs:
         run: |
           docker run --rm -u 0 -v "$PWD":/build -w /build ryanfb/quartus-mister:latest bash -lc '
             QB="/opt/intelFPGA_lite/17.0/quartus/bin"
-            # Quartus 17 bundles an old libstdc++ that clashes with the image tcmalloc
-            # (missing CXXABI_1.3.8 / GLIBCXX_3.4.21); drop it so the loader uses the
-            # newer system libstdc++, the documented fix for Quartus on modern glibc.
             rm -f /opt/intelFPGA_lite/17.0/quartus/linux64/libstdc++.so.6* 2>/dev/null || true
             export PATH="$QB:$PATH"
-            which quartus_sh
             quartus_sh --version 2>&1 | head -2
             quartus_sh --flow compile Arcade-LaserdiscGames
           '
