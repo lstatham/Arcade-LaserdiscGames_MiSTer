@@ -11,10 +11,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Patch core_jpeg IDCT RAM for Quartus
+      - name: Patch core_jpeg dual-port RAMs for Quartus
         run: |
-          cp .github/patches/jpeg_idct_ram_dp.v rtl/video/core_jpeg/src_v/jpeg_idct_ram_dp.v
-          echo "applied; MERGED marker count:"; grep -c MERGED rtl/video/core_jpeg/src_v/jpeg_idct_ram_dp.v
+          python3 .github/patches/patch_core_jpeg.py rtl/video/core_jpeg
+          echo "residual multi-driver RAM blocks:"; grep -rl "posedge clk1_i" rtl/video/core_jpeg/src_v || echo none
 
       - name: Free disk and move docker storage to /mnt
         run: |
